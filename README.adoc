@@ -29,10 +29,18 @@ I have created 3 different Spec methods that demonstrate the odd behavior.
 
 === It is able to update a Book without creating a new transaction, by using GORM in the service
 
+
 [source,groovy]
 .Production code in BookService
 ----
+ifndef::env-github[]
 include::grails-app/services/acme/library/BookService.groovy[tag=updateWithGORM]
+endif::[]
+ifdef::env-github[]
+    Book updateWithGORM(Book toUpdate) {
+        toUpdate.save(flush: true, failOnError: true)
+    }
+endif::[]
 ----
 
 This is the Integration test:
@@ -40,7 +48,22 @@ This is the Integration test:
 [source,groovy]
 .It is able to update a Book without creating a new transaction, by using GORM in the service.
 ----
+ifndef::env-github[]
 include::src/integration-test/groovy/acme/library/BookServiceIntSpec.groovy[tag=updateWithGORM]
+endif::[]
+ifdef::env-github[]
+    def "It is able to update a Book without creating a new transaction, by using GORM in the service."() {
+        when:
+        book.title = updatedTitle
+        bookService.updateWithGORM(book)
+
+        then:
+        Book.findByTitle(updatedTitle) != null
+
+        where:
+        updatedTitle = "Bilbo The Hobbit"
+    }
+endif::[]
 ----
 
 
@@ -49,7 +72,14 @@ include::src/integration-test/groovy/acme/library/BookServiceIntSpec.groovy[tag=
 [source,groovy]
 .Production code in BookService
 ----
+ifndef::env-github[]
 include::grails-app/services/acme/library/BookService.groovy[tag=updateWithDataService]
+endif::[]
+ifdef::env-github[]
+    Book updateWithDataService(Book toUpdate) {
+        bookDataService.save(toUpdate)
+    }
+endif::[]
 ----
 
 This is the Integration test:
@@ -57,7 +87,22 @@ This is the Integration test:
 [source,groovy]
 .It is able to update a Book without creating a new transaction, by using GORM in the service.
 ----
+ifndef::env-github[]
 include::src/integration-test/groovy/acme/library/BookServiceIntSpec.groovy[tag=updateWithDataService]
+endif::[]
+ifdef::env-github[]
+    def "It is NOT able to update a Book without creating a new transaction, if using a Data Service."() {
+        when:
+        book.title = updatedTitle
+        bookService.updateWithDataService(book)
+
+        then:
+        Book.findByTitle(updatedTitle) == null //<1>
+
+        where:
+        updatedTitle = "Bilbo The Hobbit"
+    }
+endif::[]
 ----
 <1> The updated book cannot be found after requesting an update
 
@@ -66,7 +111,14 @@ include::src/integration-test/groovy/acme/library/BookServiceIntSpec.groovy[tag=
 [source,groovy]
 .Production code in BookService
 ----
+ifndef::env-github[]
 include::grails-app/services/acme/library/BookService.groovy[tag=updateWithDataService]
+endif::[]
+ifdef::env-github[]
+    Book updateWithDataService(Book toUpdate) {
+        bookDataService.save(toUpdate)
+    }
+endif::[]
 ----
 
 This is the Integration test:
@@ -74,7 +126,24 @@ This is the Integration test:
 [source,groovy]
 .It is able to update a Book without creating a new transaction, by using GORM in the service.
 ----
+ifndef::env-github[]
 include::src/integration-test/groovy/acme/library/BookServiceIntSpec.groovy[tag=updateWithDataServiceAndNewTransaction]
+endif::[]
+ifdef::env-github[]
+    def "It is able to update a Book by creating a new transaction, if using a Data Service."() {
+        when:
+        book.title = updatedTitle
+        Book.withNewTransaction { //<1>
+            bookService.updateWithDataService(book)
+        }
+
+        then:
+        Book.findByTitle(updatedTitle) != null //<2>
+
+        where:
+        updatedTitle = "Bilbo The Hobbit"
+    }
+endif::[]
 ----
 <1> By usign withNewTransaction, the update succeeds
 <2> The updated book CAN be found after requesting an update
