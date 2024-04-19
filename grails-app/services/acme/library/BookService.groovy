@@ -8,11 +8,15 @@ import grails.gorm.transactions.Transactional
 class BookService {
     BookDataService bookDataService
 
+    // tag::updateWithDataService[]
     Book updateWithDataService(Book toUpdate) {
         bookDataService.save(toUpdate)
     }
+    // end::updateWithDataService[]
 
+    // tag::updateWithGORM[]
     Book updateWithGORM(Book toUpdate) {
         toUpdate.save(flush: true, failOnError: true)
     }
+    // end::updateWithGORM[]
 }
