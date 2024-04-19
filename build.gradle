@@ -1,0 +1,280 @@
+//tag::buildscript[]
+buildscript {
+    def env = System.getenv() + new HashMap(System.properties)
+    def cred = {
+        username = env.NEXUS_BUILD
+        password = env.NEXUS_BUILD_PASS
+    }
+    repositories {
+        mavenLocal()
+        maven {
+            credentials(cred)
+            url = "https://${env.NEXUS_HOST}/repository/repo"
+        }
+    }
+    dependencies {
+        classpath "org.grails:grails-gradle-plugin:$grailsVersion"
+        classpath "org.grails.plugins:hibernate5:7.0.5"
+        classpath "org.grails.plugins:views-gradle:2.0.2"
+        classpath "com.bertramlabs.plugins:asset-pipeline-gradle:3.2.4"
+        classpath 'org.grails.plugins:database-migration:3.1.0'
+    }
+}
+//end::buildscript[]
+
+version "0.0.1"
+group "com.b2boost.v4.apis"
+
+apply plugin:"idea"
+apply plugin:"war"
+apply plugin:"org.grails.grails-web"
+apply plugin:"org.grails.plugins.views-json"
+apply plugin:"com.bertramlabs.asset-pipeline"
+apply plugin:"org.grails.grails-gsp"
+//apply plugin: "codenarc"
+
+//tag::env[]
+def env = System.getenv() + new HashMap(System.properties)
+//end::env[]
+
+
+//tag::repositories[]
+repositories {
+    def cred = {
+        username = env.NEXUS_BUILD
+        password = env.NEXUS_BUILD_PASS
+    }
+    mavenLocal()
+    maven {
+        credentials(cred)
+        url = "https://${env.NEXUS_HOST}/repository/repo"
+    }
+}
+//end::repositories[]
+
+configurations {
+    developmentOnly
+    runtimeClasspath {
+        extendsFrom developmentOnly
+    }
+}
+
+//LMU: Comment this out if you want to cache SNAPSHOTS a little
+configurations.all {
+    resolutionStrategy.cacheChangingModulesFor 0, 'seconds'
+}
+
+dependencies {
+    //region B2Boost
+    //tag::external-plugins[]
+    //region external plugins
+    compile "org.grails.plugins:database-migration:3.1.0"
+    runtime 'org.grails.plugins:grails-console:2.1.1'
+//    compile "org.grails.plugins:rabbitmq-native:3.5.1"
+    //endregion external plugins
+    //end::external-plugins[]
+
+    // LMU: Fixing > 'org.codehaus.groovy.ast.AnnotatedNode org.apache.groovy.ast.tools.AnnotatedNodeUtils.markAsGenerated(org.codehaus.groovy.ast.ClassNode, org.codehaus.groovy.ast.AnnotatedNode)'
+    // This happens when having 2 different versions of groovy in the classpath
+    compile ("org.codehaus.groovy:groovy-dateutil:${groovyVersion}")
+    compile ("org.codehaus.groovy:groovy-all:${groovyVersion}") {
+        force=true
+    }
+
+    //tag::liquibase-micronaut-bug[]
+//    compile 'org.liquibase:liquibase-core:3.5.5'
+    //LMU: See https://github.com/micronaut-projects/micronaut-liquibase/issues/4
+    compile ("org.liquibase:liquibase-core:3.6.3") {
+        exclude group: 'org.springframework'
+    }
+//end::liquibase-micronaut-bug[]
+
+    // tag::external-libraries[]
+    testCompile 'com.nagternal:spock-genesis:0.6.0'
+
+    //tag::hazelcast[]
+//    compile 'com.hazelcast:hazelcast:3.6.2'
+//    compile 'com.hazelcast:hazelcast-client:3.6.2'
+    //end::hazelcast[]
+
+    compile "com.oracle:ojdbc7:12.1.0.2.0"
+    // end::external-libraries[]
+
+    //endregion external libraries
+
+    //tag::internal-libraries[]
+    //region internal libraries
+    compile "com.b2boost.libs.grails_4_1_1:util:${ngLibraries}"
+    compile "com.b2boost.libs.grails_4_1_1:grails4-testing:${ngLibraries}"
+    //TODO LMU migrate some/all of these to jdk 11 ?
+//    compile "com.b2boost.ng.libs:commons-error:${ngLibraries}"
+//    compile "com.b2boost.ng.libs:grails4-testing:${ngLibraries}"
+//    compile "com.b2boost.ng.libs:grails4-foundation:${ngLibraries}"
+//    compile "com.b2boost.ng.libs:rest-client:${ngLibraries}"
+//    compile "com.b2boost.ng.libs:jwtAuth-client:${ngLibraries}"
+//    compile "com.b2boost.ng.libs:search:${ngLibraries}"
+//    compile "com.b2boost:commons-vault:${libraries}"
+    compile "com.b2boost.libs.grails_2_1_3:commons-vault:${libraries}"
+//    compile "com.b2boost.libs.${sparkersGrailsLibrariesPrefix}:jwtAuth-client:${sparkersGrailsLibraries}"
+    compile "com.b2boost.libs.${sparkersGrailsLibrariesPrefix}:grails4-testing-jwt:${sparkersGrailsLibraries}"
+    //endregion internal libraries
+    //end::internal-libraries[]
+
+    //tag::internal-plugins[]
+    //region internal plugins
+//    compile "com.b2boost.grails4.plugin:grails-jwtauth-plugin:${jwtAuthPlugin}"
+//    compile "com.b2boost.v4.plugin:v4-plugin-hazelcast:${v4PluginHazelcast}"
+//    compile "com.b2boost.v4.plugin:v4-plugin-messaging:${v4PluginMessaging}"
+    compile "com.b2boost.v4.plugin:v4-plugin-domain-search:${v4PluginDomainSearch}"
+    //endregion internal plugins
+    //end::internal-plugins[]
+
+    //endregion B2BOOST
+
+    developmentOnly("org.springframework.boot:spring-boot-devtools")
+    compile "org.springframework.boot:spring-boot-starter-logging"
+    compile "org.springframework.boot:spring-boot-autoconfigure"
+    compile "org.grails:grails-core"
+    compile "org.springframework.boot:spring-boot-starter-actuator"
+    compile "org.springframework.boot:spring-boot-starter-tomcat"
+    compile "org.grails:grails-web-boot"
+    compile "org.grails:grails-logging"
+    compile "org.grails:grails-plugin-rest"
+    compile "org.grails:grails-plugin-databinding"
+    compile "org.grails:grails-plugin-i18n"
+    compile "org.grails:grails-plugin-services"
+    compile "org.grails:grails-plugin-url-mappings"
+//TODO LMU check: not in grails4-application
+//    compile "org.grails:grails-plugin-codecs"
+    compile "org.grails:grails-plugin-interceptors"
+//TODO LMU check: not in grails4-application
+//    compile "org.grails:grails-plugin-datasource"
+
+    //Getting errors with this when running tests
+    //    compile "org.grails.plugins:cache"
+    // Caused by: grails.plugins.exceptions.PluginException: Failed to initialize class [com.demo.DemoController] from plugin [cache] : com.demo.DemoController
+    // Workaround: https://github.com/grails/grails-cache/issues/139: Use 5.0.1
+    //    compile "org.grails.plugins:cache"
+    compile "org.grails.plugins:cache:5.0.1"
+    compile "org.grails.plugins:async"
+//    compile "org.grails.plugins:spring-security-rest:3.0.1"
+    compile "org.grails.plugins:scaffolding"
+    compile "org.grails.plugins:views-json"
+    compile "org.grails.plugins:views-json-templates"
+    compile "org.grails.plugins:events"
+    compile "org.grails.plugins:hibernate5"
+    compile "org.hibernate:hibernate-core:5.4.18.Final"
+    compile "org.grails.plugins:gsp"
+    compileOnly "io.micronaut:micronaut-inject-groovy"
+    console "org.grails:grails-console"
+    profile "org.grails.profiles:web"
+    runtime "org.glassfish.web:el-impl:2.1.2-b03"
+    runtime "com.h2database:h2"
+    runtime "org.apache.tomcat:tomcat-jdbc"
+    runtime "javax.xml.bind:jaxb-api:2.3.1"
+    runtime "com.bertramlabs.plugins:asset-pipeline-grails:3.2.4"
+    testCompile "io.micronaut:micronaut-inject-groovy"
+    testCompile "org.grails:grails-gorm-testing-support"
+    testCompile "org.mockito:mockito-core"
+    testCompile "io.micronaut:micronaut-http-client"
+    testCompile "org.grails:grails-web-testing-support"
+    testCompile "org.grails:views-json-testing-support"
+    testCompile "org.hibernate.validator:hibernate-validator:6.0.20.Final"
+
+    testCompile "org.skyscreamer:jsonassert:1.5.1"
+    testCompile "net.javacrumbs.json-unit:json-unit-assertj:2.36.1"
+}
+
+bootRun {
+    ignoreExitValue true
+    jvmArgs(
+            '-Dspring.output.ansi.enabled=always',
+            '-noverify',
+            '-XX:TieredStopAtLevel=1',
+            '-Xmx1024m')
+    sourceResources sourceSets.main
+    String springProfilesActive = 'spring.profiles.active'
+    systemProperty springProfilesActive, System.getProperty(springProfilesActive)
+}
+
+tasks.withType(GroovyCompile) {
+    configure(groovyOptions) {
+        forkOptions.jvmArgs = ['-Xmx2048m']
+    }
+}
+
+//tag::testLogging[]
+test {
+    testLogging {
+        showStandardStreams = true
+    }
+    beforeTest {
+        descriptor -> logger.lifecycle("Running test: " + descriptor)
+    }
+}
+integrationTest {
+    testLogging {
+        showStandardStreams = true
+    }
+    beforeTest {
+        descriptor -> logger.lifecycle("Running test: " + descriptor)
+    }
+}
+//end::testLogging[]
+
+assets {
+    minifyJs = true
+    minifyCss = true
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir 'grails-app/migrations'
+        }
+    }
+}
+
+/*
+codenarc {
+    config = resources.text.fromFile('codenarc/codenarc-ruleset.groovy')
+
+    maxPriority1Violations 0
+    maxPriority2Violations 5
+    maxPriority3Violations 5
+}
+
+codenarcTest {
+    config = resources.text.fromFile('codenarc/codenarcTest-ruleset.groovy')
+
+    maxPriority1Violations 0
+    maxPriority2Violations 5
+    maxPriority3Violations 5
+}
+
+codenarcIntegrationTest {
+    config = resources.text.fromFile('codenarc/codenarcTest-ruleset.groovy')
+
+    maxPriority1Violations 0
+    maxPriority2Violations 5
+    maxPriority3Violations 5
+}
+
+*/
+
+/*
+//tag::docToolchain[]
+project('docToolchain') {
+    if (project.hasProperty('docDir')) {
+        docDir = '../.'
+        mainConfigFile = 'DocToolchainConfig.groovy'
+    } else {
+        println "="*80
+        println "  please initialize the docToolchain submodule"
+        println "  by executing git submodule update -i"
+        println "="*80
+    }
+}
+//end::docToolchain[]
+*/
+
