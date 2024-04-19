@@ -177,3 +177,6 @@ endif::[]
 <1> By usign withNewTransaction, the update succeeds
 <2> The updated book CAN be found after requesting an update
 
+== Conclusion
+
+Either this is a bug in the integration test runtime of Grails 4.1.4 or the documentation is not clear on how to use transactional services in integration tests.
