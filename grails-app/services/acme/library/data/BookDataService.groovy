@@ -9,4 +9,6 @@ abstract class BookDataService {
     abstract Book save(Book toSave)
 
     abstract Book get(Long id)
+
+    abstract Book findByTitle(String title)
 }

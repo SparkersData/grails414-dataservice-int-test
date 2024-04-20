@@ -5,6 +5,6 @@ class Book {
 
 
     static constraints = {
-        title blank: false, maxSize: 255
+        title blank: false, maxSize: 255, unique: true
     }
 }

@@ -15,11 +15,14 @@ class BookServiceIntSpec extends Specification {
 
     Book book
 
-    private void setup() {
+    void setup() {
         book = new Book(title: "The Hobbit")
         book.save(flush: true, failOnError: true)
     }
 
+    void cleanup() {
+        Book.where {}.deleteAll()
+    }
     // tag::updateWithGORM[]
     def "It is able to update a Book without creating a new transaction, by using GORM in the service."() {
         when:
