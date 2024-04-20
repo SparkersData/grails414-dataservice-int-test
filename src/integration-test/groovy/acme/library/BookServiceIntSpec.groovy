@@ -1,6 +1,7 @@
 package acme.library
 
 import acme.domain.Book
+import acme.library.data.BookDataService
 import grails.gorm.transactions.Rollback
 import grails.testing.mixin.integration.Integration
 import spock.lang.Specification
@@ -12,6 +13,7 @@ import spock.lang.Subject
 class BookServiceIntSpec extends Specification {
 
     BookService bookService
+    BookDataService bookDataService
 
     Book book
 
@@ -45,6 +47,7 @@ class BookServiceIntSpec extends Specification {
 
         then:
         Book.findByTitle(updatedTitle) == null //<1>
+        bookDataService.findByTitle(updatedTitle) == null
 
         where:
         updatedTitle = "Bilbo The Hobbit"
