@@ -49,6 +49,10 @@ class BookServiceIntSpec extends Specification {
         book = new Book(title: "The Hobbit")
         book.save(flush: true, failOnError: true)
     }
+
+    void cleanup() {
+        Book.where {}.deleteAll()
+    }
 }
 ----
 
